@@ -1,0 +1,21 @@
+{
+  "name": "orbital-domination",
+  "version": "0.1.0",
+  "description": "Orbital Domination - juego multijugador de estrategia espacial (tycoon + diplomacia/guerra + proyectos tecnológicos)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "TICK_SECONDS=60 node server/index.js",
+    "test:combat": "node server/tests/combat.test.js",
+    "test:smoke": "node server/tests/smoke.test.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4",
+    "three": "^0.160.0"
+  }
+}

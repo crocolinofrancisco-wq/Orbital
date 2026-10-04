@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#1d2126">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Orbital Domination</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🪐%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ============ PANTALLA DE LOGIN / REGISTRO ============ -->
+  <section id="auth-screen" class="hidden">
+    <canvas id="bg-stars"></canvas>
+    <div class="auth-box">
+      <div class="logo">ORBITAL<small>DOMINATION</small></div>
+      <p class="center muted">Funda tu nación estelar. Diseña tus naves. Comercia, traiciona y domina la galaxia.</p>
+      <div class="card">
+        <div class="subtabs" id="auth-tabs">
+          <button class="active" data-mode="login">Entrar</button>
+          <button data-mode="register">Crear cuenta</button>
+        </div>
+        <label>Usuario</label>
+        <input type="text" id="auth-user" autocomplete="username" maxlength="16" placeholder="tu_usuario">
+        <label>Contraseña</label>
+        <input type="password" id="auth-pass" autocomplete="current-password" placeholder="••••••">
+        <div class="spacer"></div>
+        <button class="btn primary block" id="auth-go">Entrar</button>
+        <p class="small muted center" id="auth-msg"></p>
+        <p class="small muted center">No pedimos email ni datos personales. Nunca compartas tu contraseña.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CREACIÓN DE NACIÓN ============ -->
+  <section id="create-screen" class="hidden">
+    <div class="auth-box">
+      <div class="title-box">Funda tu nación</div>
+      <div class="card">
+        <div class="flag-preview"><span id="cn-flag"></span><span id="cn-ball"></span></div>
+        <label>Nombre de la nación</label>
+        <input type="text" id="cn-name" maxlength="24" placeholder="Ej: República de Aurealis">
+        <label>Lema</label>
+        <input type="text" id="cn-motto" maxlength="60" placeholder="Ej: Por las estrellas y el pueblo">
+        <label>Diseño de bandera</label>
+        <div class="choice-row" id="cn-layouts"></div>
+        <label>Emblema</label>
+        <div class="choice-row" id="cn-emblems"></div>
+        <label>Colores</label>
+        <div class="row"><input type="color" id="cn-c0" value="#1d3557"><input type="color" id="cn-c1" value="#e63946"><input type="color" id="cn-c2" value="#f1faee">
+          <button class="btn small" id="cn-random">🎲 Aleatoria</button></div>
+        <div class="spacer"></div>
+        <button class="btn primary block" id="cn-go">🚀 Fundar nación</button>
+        <p class="small muted center" id="cn-msg">Tu capital se asignará en una zona libre de la galaxia.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ JUEGO ============ -->
+  <div id="app" class="hidden">
+    <header id="topbar"></header>
+    <main id="main">
+      <section class="view map-view" id="view-map">
+        <canvas id="galaxy-canvas"></canvas>
+        <div id="map-labels"></div>
+        <div class="map-hud">
+          <button class="btn small" id="map-back" style="display:none">← Galaxia</button>
+          <span class="tag" id="map-title">Galaxia</span>
+          <span class="grow"></span>
+          <button class="btn small" id="map-home">🏠</button>
+        </div>
+        <div class="map-sheet hidden" id="map-sheet"></div>
+      </section>
+      <section class="view hidden" id="view-empire"></section>
+      <section class="view hidden" id="view-projects"></section>
+      <section class="view hidden" id="view-military"></section>
+      <section class="view hidden" id="view-social"></section>
+    </main>
+    <nav id="tabbar">
+      <button data-view="map" class="active"><span class="ico">🌌</span>Mapa</button>
+      <button data-view="empire"><span class="ico">🏛️</span>Imperio</button>
+      <button data-view="projects"><span class="ico">🔬</span>Proyectos</button>
+      <button data-view="military"><span class="ico">⚔️</span>Militar</button>
+      <button data-view="social"><span class="ico">💬</span>Social<span class="badge hidden" id="social-badge">0</span></button>
+    </nav>
+  </div>
+
+  <div id="modal-root" class="hidden"></div>
+  <div id="toasts"></div>
+
+  <script src="vendor/socket.io.js"></script>
+  <script src="shared/gamedata.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

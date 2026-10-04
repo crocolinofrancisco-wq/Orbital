@@ -1,0 +1,10 @@
+{
+  "name": "Orbital Domination",
+  "short_name": "Orbital",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1d2126",
+  "theme_color": "#1d2126",
+  "icons": []
+}
