@@ -1,150 +1,13 @@
 /* =====================================================================
- * SIMULADOR DE COMBATE (reemplaza al "rol hecho por un humano")
+ * COMBATE TERRESTRE (invasión de planetas)
  * ---------------------------------------------------------------------
- * Inspirado en el combate espacial "realista" (The Expanse, videos de
- * referencia): las batallas se deciden por DISTANCIA, SENSORES y por la
- * relación entre tipos de daño y defensas, no por reflejos.
- *
- * Una batalla tiene 6 rondas en 3 fases de distancia:
- *   LARGA (rondas 1-2): misiles y cañones de riel dominan.
- *   MEDIA (rondas 3-4): láseres y torpedos.
- *   CORTA (rondas 5-6): plasma, cañones automáticos y cazas.
- *
- * Piedra-papel-tijera fácil de entender para adolescentes:
- *   ENERGÍA (láser/plasma)     -> la frenan los ESCUDOS
- *   CINÉTICO (cañón/riel)      -> lo frena el BLINDAJE
- *   EXPLOSIVO (misil/torpedo)  -> lo intercepta la DEFENSA PUNTUAL
- *   CAZAS: difíciles de acertar para naves grandes, pero la defensa
- *          puntual los destroza.
- *
+ * El combate ESPACIAL ya no está aquí: ahora es una simulación en tiempo
+ * real compartida entre servidor y cliente (public/shared/battlesim.js,
+ * gestionada por server/battles.js). Este módulo solo resuelve el combate
+ * terrestre, que sigue siendo por rondas (desgaste tipo Lanchester).
  * Es una función PURA: mismo input + misma semilla = mismo resultado.
- * Así se puede testear (server/tests/combat.test.js) y re-simular.
  * ===================================================================== */
 const { makeRng } = require('./galaxy.js');
-
-const PHASES = ['larga', 'larga', 'media', 'media', 'corta', 'corta'];
-const PHASE_IDX = { larga: 0, media: 1, corta: 2 };
-
-/**
- * group = { key, designId, name, nation, count, stats (de GD.designStats), damage (acumulado) }
- * Un "lado" es una lista de grupos.
- */
-function sideTotals(groups) {
-  const t = { pd: 0, sensors: 0, ecm: 0, alive: 0 };
-  for (const g of groups) {
-    if (g.count <= 0) continue;
-    t.pd += g.stats.pd * g.count;
-    t.sensors = Math.max(t.sensors, g.stats.sensors);
-    t.ecm = Math.max(t.ecm, g.stats.ecm);
-    t.alive += g.count;
-  }
-  return t;
-}
-
-function pickTarget(groups, rng, preferFighters) {
-  const alive = groups.filter(g => g.count > 0);
-  if (!alive.length) return null;
-  // Peso por tamaño: las naves grandes son blancos más fáciles de encontrar
-  const weights = alive.map(g => g.count * Math.sqrt(g.stats.size) * (preferFighters && g.stats.role === 'fighter' ? 4 : 1));
-  const tot = weights.reduce((a, b) => a + b, 0);
-  let r = rng() * tot;
-  for (let i = 0; i < alive.length; i++) { r -= weights[i]; if (r <= 0) return alive[i]; }
-  return alive[alive.length - 1];
-}
-
-/** Aplica daño a un grupo, devuelve unidades destruidas */
-function applyDamage(g, dmg) {
-  if (g.count <= 0) return 0;
-  g.damage = (g.damage || 0) + dmg;
-  const hp = g.stats.hp;
-  const kills = Math.min(g.count, Math.floor(g.damage / hp));
-  g.count -= kills;
-  g.damage -= kills * hp;
-  if (g.count <= 0) g.damage = 0;
-  return kills;
-}
-
-function fireSide(attackers, defenders, phaseIdx, rng, log) {
-  const atk = sideTotals(attackers), def = sideTotals(defenders);
-  // Precisión base 75%, sensores propios suben, guerra electrónica enemiga baja
-  const baseHit = Math.max(0.25, Math.min(0.95, 0.75 + (atk.sensors - def.ecm) * 0.01));
-  const shots = [];
-  for (const g of attackers) {
-    if (g.count <= 0) continue;
-    for (const w of g.stats.weapons) {
-      const eff = w.range[phaseIdx];
-      if (eff <= 0) continue;
-      // Fiabilidad: % de armas que funcionan esta ronda (con variación)
-      const working = g.count * w.rel * (0.85 + rng() * 0.3);
-      shots.push({ from: g, w, raw: w.dmg * eff * working });
-    }
-    // Portanaves: sus escuadrones atacan en fase media y corta
-    if (g.stats.hangar && phaseIdx >= 1) {
-      shots.push({ from: g, w: { dmgType: 'cinetico', antiCapital: 1.2 }, raw: g.stats.hangar * 6 * g.count, fighter: true });
-    }
-  }
-  // Defensa puntual: intercepta un % de los explosivos
-  const explosiveTotal = shots.filter(s => s.w.dmgType === 'explosivo').reduce((a, s) => a + s.raw, 0);
-  const intercept = explosiveTotal > 0 ? Math.min(0.8, def.pd / (def.pd + explosiveTotal * 0.5 + 1)) : 0;
-  let dealt = 0, intercepted = 0;
-  const kills = {};
-  for (const s of shots) {
-    let raw = s.raw * baseHit;
-    if (s.w.dmgType === 'explosivo') { intercepted += raw * intercept; raw *= (1 - intercept); }
-    const isFighter = s.from.stats.role === 'fighter' || s.fighter;
-    const target = pickTarget(defenders, rng, s.w.dmgType === 'cinetico' && s.from.stats.role === 'fighter');
-    if (!target) break;
-    const ts = target.stats;
-    // Cazas son evasivos ante armas de naves grandes
-    if (ts.role === 'fighter' && !isFighter) raw *= 0.45;
-    // Torpedos y portanaves hacen más daño a naves capitales
-    if (ts.size >= 14) raw *= (s.w.antiCapital || 1);
-    // Mitigación según tipo de daño
-    const K = 10 * ts.size + 20;
-    const defense = s.w.dmgType === 'energia' ? ts.shield : (s.w.dmgType === 'cinetico' ? ts.armor : ts.armor * 0.5);
-    raw = raw * K / (K + defense);
-    dealt += raw;
-    const k = applyDamage(target, raw);
-    if (k) kills[target.name] = (kills[target.name] || 0) + k;
-  }
-  // La defensa puntual también derriba cazas enemigos en fase corta/media
-  if (phaseIdx >= 1 && atk.pd > 0) {
-    const ftrs = defenders.filter(g => g.count > 0 && g.stats.role === 'fighter');
-    for (const f of ftrs) {
-      const k = applyDamage(f, atk.pd * 0.6 * baseHit / ftrs.length);
-      if (k) kills[f.name] = (kills[f.name] || 0) + k;
-    }
-  }
-  log.dealt = Math.round(dealt); log.intercepted = Math.round(intercepted); log.kills = kills;
-}
-
-/**
- * Resuelve una batalla espacial.
- * @returns {{winner:'A'|'B'|'draw', rounds:[], A, B}}  los grupos quedan mutados con count final
- */
-function resolveSpaceBattle(sideA, sideB, seed) {
-  const rng = makeRng(seed || 1);
-  const startA = sideA.map(g => ({ name: g.name, count: g.count }));
-  const startB = sideB.map(g => ({ name: g.name, count: g.count }));
-  const rounds = [];
-  for (let r = 0; r < PHASES.length; r++) {
-    const pi = PHASE_IDX[PHASES[r]];
-    if (sideTotals(sideA).alive === 0 || sideTotals(sideB).alive === 0) break;
-    const la = {}, lb = {};
-    // Disparo simultáneo: copiamos snapshot para que ambos disparen con la flota al inicio de la ronda
-    const snapA = sideA.map(g => Object.assign({}, g)), snapB = sideB.map(g => Object.assign({}, g));
-    fireSide(snapA, sideB, pi, rng, la);
-    fireSide(snapB, sideA, pi, rng, lb);
-    rounds.push({ round: r + 1, phase: PHASES[r], A: la, B: lb });
-  }
-  const aliveA = sideTotals(sideA).alive, aliveB = sideTotals(sideB).alive;
-  const winner = aliveA > 0 && aliveB === 0 ? 'A' : (aliveB > 0 && aliveA === 0 ? 'B' : 'draw');
-  return {
-    winner, rounds,
-    A: startA.map((s, i) => ({ name: s.name, start: s.count, end: sideA[i].count })),
-    B: startB.map((s, i) => ({ name: s.name, start: s.count, end: sideB[i].count }))
-  };
-}
 
 /**
  * Combate terrestre (invasión). Modelo de desgaste tipo Lanchester simplificado.
@@ -183,4 +46,28 @@ function spreadGround(groups, dmg) {
   }
 }
 
-module.exports = { resolveSpaceBattle, resolveGroundBattle, PHASES };
+/* ---------------------------------------------------------------
+ * CAMPAÑA TERRESTRE (v3): una ronda cada ~20 s durante varios minutos.
+ * groundRound es pura: mismo input + misma semilla = mismo resultado.
+ *   a, d: grupos { count, stats:{groundAttack, groundDefense}, siege? }  militia: poder de la milicia
+ *   o: { stance:'assault'|'siege', supp: supresion por bombardeo 0..1, shieldUp, rng }
+ * Devuelve { aPower, dPower, shieldDmg, militia }. Los grupos se modifican (bajas).
+ * --------------------------------------------------------------- */
+const GROUND_RF = 0.04;                 // fraccion de poder que se convierte en dano por ronda (baja = campañas largas)
+const STANCE = { assault: { atk: 1.35, taken: 1.35 }, siege: { atk: 0.75, taken: 0.6 } };
+function groundRound(a, d, militia, o) {
+  const rng = o.rng, st = STANCE[o.stance] || STANCE.assault;
+  const power = (gs, key) => gs.reduce((x, g) => x + Math.max(1, g.stats[key]) * Math.max(0, g.count), 0);
+  const aRaw = power(a, 'groundAttack') * st.atk * (0.85 + rng() * 0.3);
+  const dPower = (power(d, 'groundAttack') + militia * 0.5) * (1 - 0.6 * (o.supp || 0)) * (0.85 + rng() * 0.3) * 1.15;   // +15 % defensa en casa
+  const shieldShare = o.shieldUp ? 0.5 : 0;
+  // la artilleria de asedio pesa x3 contra el generador del escudo
+  const aSiege = a.reduce((x, g) => x + Math.max(1, g.stats.groundAttack) * Math.max(0, g.count) * (g.siege ? 3 : 1), 0) * st.atk * (0.85 + rng() * 0.3);
+  let dmg = aRaw * (1 - shieldShare) * GROUND_RF;
+  if (militia > 0) { const m = Math.min(militia, dmg); militia -= m; dmg -= m; }
+  spreadGround(d, dmg);
+  spreadGround(a, dPower * GROUND_RF * st.taken);
+  return { aPower: Math.round(aRaw), dPower: Math.round(dPower), shieldDmg: o.shieldUp ? aSiege * shieldShare * 0.25 : 0, militia };
+}
+
+module.exports = { resolveGroundBattle, groundRound, spreadGround, GROUND_RF, STANCE };

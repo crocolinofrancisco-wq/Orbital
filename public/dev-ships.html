@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<!-- Página de desarrollo: galería de todos los modelos de nave (http://localhost:3000/dev-ships.html) -->
+<html><head><meta charset="utf-8"><title>Galería de naves</title>
+<style>body{margin:0;background:#05070c;color:#dff6f3;font-family:sans-serif} canvas{display:block;width:100vw;height:100vh}</style></head>
+<body><canvas id="c"></canvas>
+<script type="module">
+import * as THREE from './vendor/three.module.js';
+import { makeShip, animateFlames } from './js/ships3d.js';
+const hulls = ['caza','bombardero','dron','corbeta','transporte','fragata','destructor','crucero','portanaves','acorazado','infanteria','blindado','tanque','mecha'];
+const R = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true }); R.setSize(innerWidth, innerHeight); R.setPixelRatio(devicePixelRatio);
+const sc = new THREE.Scene(); sc.background = new THREE.Color(0x0b0f18);
+sc.add(new THREE.AmbientLight(0xffffff, .55)); const d = new THREE.DirectionalLight(0xffffff, 1.7); d.position.set(-3, 3, 4); sc.add(d);
+const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, .1, 500); cam.position.set(22, 26, 30); cam.lookAt(0, 0, 0);
+const ships = hulls.map((h, i) => { const s = makeShip(h, ['#1d3557', '#e63946', '#f1faee']); s.position.set((i % 5 - 2) * 9, 0, (Math.floor(i / 5) - 1) * 9); s.rotation.y = -0.7; sc.add(s); return s; });
+(function loop(t) { ships.forEach(s => animateFlames(s, t, 1.2)); R.render(sc, cam); requestAnimationFrame(loop); })(0);
+</script></body></html>

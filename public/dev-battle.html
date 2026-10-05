@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<!-- Página de desarrollo: laboratorio de batallas SIN servidor (http://localhost:3000/dev-battle.html)
+     Elige un escenario, mira la simulación y los efectos en 3D. Sirve para tunear visuales y balance.
+     ?s=leviatan&env=asteroids&speed=2 también funciona. -->
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laboratorio de batallas</title>
+<style>
+  body{margin:0;background:#04060c;color:#dff6f3;font-family:'Segoe UI',sans-serif;overflow:hidden}
+  #stage{position:fixed;inset:0} canvas{width:100%;height:100%;display:block;touch-action:none}
+  #bar{position:fixed;left:0;right:0;top:0;display:flex;gap:6px;flex-wrap:wrap;padding:8px;background:#04060ccc;z-index:5;align-items:center;font-size:13px}
+  button,select{background:#1b2230;color:#dff6f3;border:1px solid #4a5a70;border-radius:8px;padding:6px 10px;cursor:pointer}
+  button.on{border-color:#57cc99}
+  #info{margin-left:auto;color:#8a9aa3}
+</style></head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="bar">
+  <b>Laboratorio de batallas</b>
+  <select id="sc"></select>
+  <select id="env"><option value="none">espacio abierto</option><option value="asteroids">asteroides</option><option value="nebula">nebulosa</option><option value="blackhole">agujero negro</option></select>
+  <button data-sp="1" class="on">×1</button><button data-sp="2">×2</button><button data-sp="4">×4</button><button data-sp="8">×8</button>
+  <button id="go">Reiniciar</button><button id="cam">Cámara auto</button>
+  <span id="info"></span>
+</div>
+<script src="shared/gamedata.js"></script>
+<script src="shared/battlesim.js"></script>
+<script type="module">
+import * as THREE from './vendor/three.module.js';
+import { BattleViewer } from './js/battle3d.js';
+const GD = window.GameData, BS = window.BattleSim;
+const comps = {}; GD.BASE_COMPONENTS.forEach(c => comps[c.id] = c);
+Object.assign(comps, {
+  x_misil: { id: 'x_misil', type: 'misil', points: { potencia: 20, fiabilidad: 8, eficiencia: 2 } }, x_pd: { id: 'x_pd', type: 'pd', points: { potencia: 20, fiabilidad: 10, eficiencia: 0 } },
+  x_escudo: { id: 'x_escudo', type: 'escudo', points: { potencia: 20, fiabilidad: 10, eficiencia: 0 } }, x_rail: { id: 'x_rail', type: 'railgun', points: { potencia: 20, fiabilidad: 8, eficiencia: 2 } },
+  x_plasma: { id: 'x_plasma', type: 'plasma', points: { potencia: 20, fiabilidad: 8, eficiencia: 2 } }, x_torp: { id: 'x_torp', type: 'torpedo', points: { potencia: 20, fiabilidad: 8, eficiencia: 2 } },
+  x_pulso: { id: 'x_pulso', type: 'pulso', points: { potencia: 20, fiabilidad: 8, eficiencia: 2 } }, x_ion: { id: 'x_ion', type: 'ion', points: { potencia: 20, fiabilidad: 8, eficiencia: 2 } }, x_enj: { id: 'x_enj', type: 'enjambre', points: { potencia: 20, fiabilidad: 8, eficiencia: 2 } }, x_rad: { id: 'x_rad', type: 'radiador', points: { potencia: 20, fiabilidad: 8, eficiencia: 2 } }
+});
+const L = id => comps[id];
+const stat = (hull, c) => GD.designStats({ hull, components: c }, L);
+const simStats = s => ({ hp: s.hp, speed: s.speed, size: s.size, role: s.role, armor: s.armor, shield: s.shield, pd: s.pd, sensors: s.sensors, ecm: s.ecm, hangar: s.hangar || 0, special: s.special || [], cooling: s.cooling || 0, weapons: s.weapons.map(w => ({ type: w.type, dmgType: w.dmgType, range: w.range, dmg: w.dmg, rel: w.rel, antiCapital: w.antiCapital })) });
+const P = {
+  caza: stat('caza', ['bc_laser', 'bc_blind', 'bc_motor']), corb: stat('corbeta', ['bc_canon', 'bc_laser', 'bc_blind', 'bc_motor']), misil: stat('corbeta', ['x_misil', 'x_misil', 'x_pd', 'bc_motor']),
+  frag: stat('fragata', ['bc_canon', 'bc_laser', 'bc_laser', 'bc_blind', 'x_escudo', 'bc_motor']), dest: stat('destructor', ['x_rail', 'x_rail', 'bc_laser', 'x_misil', 'bc_blind', 'x_escudo', 'bc_motor', 'bc_motor']),
+  cruc: stat('crucero', ['x_rail', 'x_rail', 'bc_laser', 'bc_laser', 'bc_canon', 'bc_blind', 'x_escudo', 'x_pd', 'bc_motor', 'bc_motor']), port: stat('portanaves', ['bc_laser', 'bc_laser', 'bc_blind', 'x_escudo', 'x_pd', 'bc_motor', 'bc_motor']),
+  acor: stat('acorazado', ['x_rail', 'x_rail', 'x_rail', 'x_plasma', 'x_plasma', 'bc_laser', 'bc_laser', 'x_torp', 'bc_blind', 'bc_blind', 'x_escudo', 'x_pd', 'bc_motor', 'bc_motor'])
+};
+const D = {}; GD.BASE_DESIGNS.forEach(d => D[d.id] = d);
+const N = id => GD.designStats(D[id], L);
+const g = (name, hull, count, s, extra) => Object.assign({ name, hull, count, stats: simStats(s), owner: 'x' }, extra || {});
+const mon = (id, n) => g(D[id].name, D[id].hull, n || 1, N(id), { monster: true, owner: 'monsters' });
+const pir = (id, n) => g(D[id].name, D[id].hull, n, N(id), { owner: 'pirates' });
+const mine = () => [g('Cruceros', 'crucero', 3, P.cruc, { owner: 'me' }), g('Destructores', 'destructor', 3, P.dest, { owner: 'me' }), g('Fragatas', 'fragata', 4, P.frag, { owner: 'me' }), g('Corbetas', 'corbeta', 6, P.corb, { owner: 'me' }), g('Cazas', 'caza', 12, P.caza, { owner: 'me' }), g('Portanaves', 'portanaves', 1, P.port, { owner: 'me' })];
+const SCEN = {
+  medias: ['Flotas medias 20 vs 20', () => [[g('Corbetas', 'corbeta', 12, P.corb, { owner: 'me' }), g('Fragatas', 'fragata', 6, P.frag, { owner: 'me' }), g('Cazas', 'caza', 30, P.caza, { owner: 'me' })], [g('Corbetas', 'corbeta', 12, P.corb, { owner: 'foe' }), g('Misileras', 'corbeta', 6, P.misil, { owner: 'foe' }), g('Cazas', 'caza', 30, P.caza, { owner: 'foe' })]]],
+  piratas: ['Piratas (clan Hermandad)', () => [mine(), [pir('pd_corsair', 6), pir('pd_frigate', 3), pir('pd_destroyer', 2), pir('pd_hunter', 8)]]],
+  leviatan: ['Leviatán de roca', () => [mine(), [mon('md_leviatan')]]],
+  medusa: ['Medusa de plasma (EMP)', () => [mine(), [mon('md_medusa')]]],
+  enjambre: ['Enjambre centinela', () => [mine(), [mon('md_plaga', 40)]]],
+  devorador: ['Devorador estelar (jefe)', () => [mine().concat(mine().map(x => Object.assign({}, x, { owner: 'ally' }))), [mon('md_devorador')]]],
+  masiva: ['BATALLA MASIVA 150 vs 150 (dura ~30 min: usa x4)', () => { const side = o => [g('Cruceros', 'crucero', 12, P.cruc, { owner: o }), g('Destructores', 'destructor', 20, P.dest, { owner: o }), g('Fragatas', 'fragata', 40, P.frag, { owner: o }), g('Corbetas', 'corbeta', 48, P.corb, { owner: o }), g('Cazas', 'caza', 60, P.caza, { owner: o }), g('Portanaves', 'portanaves', 2, P.port, { owner: o })]; return [side('me'), side('foe')]; }],
+  armas: ['Armas nuevas: pulsos+iones+enjambre vs láser', () => [[g('Pulsos', 'fragata', 8, stat('fragata', ['x_pulso', 'x_pulso', 'x_pulso', 'bc_blind', 'x_escudo', 'bc_motor']), { owner: 'me' }), g('Iones', 'fragata', 8, stat('fragata', ['x_ion', 'x_ion', 'bc_laser', 'bc_blind', 'x_escudo', 'bc_motor']), { owner: 'me' }), g('Enjambre', 'fragata', 8, stat('fragata', ['x_enj', 'x_enj', 'bc_canon', 'bc_blind', 'x_pd', 'bc_motor']), { owner: 'me' })], [g('Láser', 'fragata', 24, stat('fragata', ['bc_laser', 'bc_laser', 'bc_laser', 'bc_blind', 'x_escudo', 'bc_motor']), { owner: 'foe' })]]],
+  calor: ['Calor: radiadores vs sin radiadores', () => [[g('Con radiadores', 'fragata', 12, stat('fragata', ['bc_laser', 'bc_laser', 'bc_laser', 'bc_blind', 'x_rad', 'bc_motor']), { owner: 'me' })], [g('Sin radiadores', 'fragata', 12, stat('fragata', ['bc_laser', 'bc_laser', 'bc_laser', 'bc_blind', 'bc_blind', 'bc_motor']), { owner: 'foe' })]]],
+  acor: ['Acorazado vs cruceros', () => [[g('Acorazado', 'acorazado', 1, P.acor, { owner: 'me' })], [g('Cruceros', 'crucero', 4, P.cruc, { owner: 'foe' })]]]
+};
+const qs = new URLSearchParams(location.search);
+const sel = document.getElementById('sc'); sel.innerHTML = Object.keys(SCEN).map(k => `<option value="${k}">${SCEN[k][0]}</option>`).join(''); sel.value = qs.get('s') || 'medias';
+document.getElementById('env').value = qs.get('env') || 'none';
+let viewer, sim, timer, speed = Number(qs.get('speed') || 1), cl = 0;
+const colors = { me: ['#1d6fb5', '#57cc99', '#f1faee'], ally: ['#2a9d8f', '#ffd166', '#f1faee'], foe: ['#7a1f2b', '#ef476f', '#f1faee'], pirates: ['#222', '#7a0010', '#e63946'], monsters: ['#2d6a4f', '#1fa37a', '#80ffdb'] };
+function run() {
+  clearInterval(timer); if (viewer) viewer.destroy();
+  const old = document.getElementById('c'); const c = old.cloneNode(); old.replaceWith(c);
+  const [A, B] = SCEN[sel.value][1]();
+  sim = new BS.BattleSim({ seed: 1 + (cl++), env: document.getElementById('env').value, maxTime: 1800, sides: { A, B } });
+  viewer = new BattleViewer(c, { nationInfo: o => ({ colors: colors[o] || colors.foe, color: new THREE.Color(colors[o] ? colors[o][1] : '#888') }), relOf: o => o === 'me' ? 'mine' : o === 'ally' ? 'ally' : 'war', delay: 500 / speed * 1.3 + 60 });
+  viewer.setMeta(sim.meta()); viewer.start(); viewer.pushFrame(sim.snapshot());
+  viewer.onEvent = ev => { if (ev.k === 'boom') document.getElementById('info').textContent = 't=' + sim.t + ' s · A ' + sim.hpFrac('A').toFixed(2) + ' vs B ' + sim.hpFrac('B').toFixed(2); };
+  timer = setInterval(() => { if (sim.over) { document.getElementById('info').textContent = 'FIN: gana ' + sim.over.winner + ' en ' + Math.round(sim.t) + ' s'; return; } sim.step(); viewer.setGroups(sim.groupsMeta()); viewer.pushFrame(sim.snapshot()); }, 500 / speed);
+}
+document.getElementById('go').onclick = run; sel.onchange = run; document.getElementById('env').onchange = run;
+document.getElementById('cam').onclick = () => viewer.resetCamera();
+document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { speed = +b.dataset.sp; document.querySelectorAll('[data-sp]').forEach(x => x.classList.toggle('on', x === b)); run(); });
+window.addEventListener('resize', () => viewer && viewer.view.resize());
+run();
+</script></body></html>

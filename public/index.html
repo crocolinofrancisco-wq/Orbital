@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <title>Orbital Domination</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🪐%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234cc9f0%22 stroke-width=%221.8%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%226.5%22/%3E%3Cellipse cx=%2212%22 cy=%2212%22 rx=%2210.5%22 ry=%223.6%22 transform=%22rotate(-20 12 12)%22/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
@@ -53,9 +53,9 @@
         <div class="choice-row" id="cn-emblems"></div>
         <label>Colores</label>
         <div class="row"><input type="color" id="cn-c0" value="#1d3557"><input type="color" id="cn-c1" value="#e63946"><input type="color" id="cn-c2" value="#f1faee">
-          <button class="btn small" id="cn-random">🎲 Aleatoria</button></div>
+          <button class="btn small" id="cn-random">:dice: Aleatoria</button></div>
         <div class="spacer"></div>
-        <button class="btn primary block" id="cn-go">🚀 Fundar nación</button>
+        <button class="btn primary block" id="cn-go">:fleet: Fundar nación</button>
         <p class="small muted center" id="cn-msg">Tu capital se asignará en una zona libre de la galaxia.</p>
       </div>
     </div>
@@ -69,11 +69,14 @@
         <canvas id="galaxy-canvas"></canvas>
         <div id="map-labels"></div>
         <div class="map-hud">
-          <button class="btn small" id="map-back" style="display:none">← Galaxia</button>
+          <button class="btn small" id="map-back" style="display:none">:back: Galaxia</button>
           <span class="tag" id="map-title">Galaxia</span>
           <span class="grow"></span>
-          <button class="btn small" id="map-home">🏠</button>
+          <button class="btn small" id="map-guide" title="Cómo jugar">:info:</button>
+          <button class="btn small" id="map-home" title="Ir a mi capital">:home:</button>
         </div>
+        <div class="order-bar hidden" id="order-bar"></div>
+        <div class="map-legend small"><span class="lg mine"></span>Tuyo <span class="lg ally"></span>Aliado <span class="lg war"></span>Enemigo <span class="lg neutral"></span>Neutral</div>
         <div class="map-sheet hidden" id="map-sheet"></div>
       </section>
       <section class="view hidden" id="view-empire"></section>
@@ -82,11 +85,11 @@
       <section class="view hidden" id="view-social"></section>
     </main>
     <nav id="tabbar">
-      <button data-view="map" class="active"><span class="ico">🌌</span>Mapa</button>
-      <button data-view="empire"><span class="ico">🏛️</span>Imperio</button>
-      <button data-view="projects"><span class="ico">🔬</span>Proyectos</button>
-      <button data-view="military"><span class="ico">⚔️</span>Militar</button>
-      <button data-view="social"><span class="ico">💬</span>Social<span class="badge hidden" id="social-badge">0</span></button>
+      <button data-view="map" class="active"><span class="ico">:galaxy:</span>Mapa</button>
+      <button data-view="empire"><span class="ico">:gov:</span>Imperio</button>
+      <button data-view="projects"><span class="ico">:research:</span>Proyectos</button>
+      <button data-view="military"><span class="ico">:war:</span>Militar</button>
+      <button data-view="social"><span class="ico">:chat:</span>Social<span class="badge hidden" id="social-badge">0</span></button>
     </nav>
   </div>
 
@@ -95,6 +98,8 @@
 
   <script src="vendor/socket.io.js"></script>
   <script src="shared/gamedata.js"></script>
+  <script src="shared/battlesim.js"></script>
+  <script src="shared/icons.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

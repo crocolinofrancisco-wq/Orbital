@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<!-- TRÁILER DE ORBITAL DOMINATION (86 s). Se abre en http://localhost:3100/trailer.html, sin login ni servidor de partida.
+     - Las batallas son REALES: usan shared/battlesim.js y js/battle3d.js (igual que dev-battle.html), adelantadas hasta
+       el momento más vistoso de cada corte.
+     - El resto de escenas (galaxia, especialización, guerra terrestre, social) son animaciones propias de esta página
+       que reproducen lo que el juego muestra de verdad (mismos iconos SVG, mismos números a escala ×10).
+     - Controles: clic o espacio = pausa/continuar · R = reiniciar · ←/→ = saltar de escena · ?t=31 empieza en el segundo 31.
+     - Para grabarlo como video: F11 (pantalla completa) + grabador de pantalla del sistema. Dura 86 s (< 1:30).
+     Guion y tiempos: docs/TRAILER.md -->
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbital Domination — Tráiler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b0e13;--panel:#16191d;--frame:#3a4048;--line:#cfe9e6;--text:#dff6f3;--muted:#8a9aa3;--accent:#4cc9f0;--good:#57cc99;--bad:#ef476f;--warn:#ffd166;--gold:#ffb703;--font:'Rajdhani','Segoe UI',system-ui,sans-serif}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000;color:var(--text);font-family:var(--font);overflow:hidden}
+  #stage{position:absolute;left:50%;top:50%;width:min(100vw,177.78vh);height:min(56.25vw,100vh);transform:translate(-50%,-50%);background:var(--bg);overflow:hidden;container-type:size}
+  #stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #g{z-index:1}
+  #c{z-index:2;opacity:0;transition:opacity .4s}
+  .layer{position:absolute;inset:0;z-index:3;pointer-events:none}
+  .ic svg,svg.icon{vertical-align:-.15em}
+  /* título */
+  #title{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;transition:opacity .8s}
+  #title h1{margin:0;font-size:6.6cqw;letter-spacing:.24em;white-space:nowrap;font-weight:700;text-transform:uppercase;text-shadow:0 0 40px #4cc9f0aa;padding-left:.24em}
+  #title p{margin:1.2cqw 0 0;font-size:2.1cqw;letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
+  #title .logo{width:8cqw;height:8cqw;color:var(--accent);margin-bottom:1cqw}
+  /* subtítulos: borde fino claro, mayúsculas (como la UI del juego) */
+  #cap{position:absolute;left:50%;bottom:7cqh;transform:translateX(-50%);z-index:5;text-align:center;opacity:0;transition:opacity .35s;pointer-events:none;max-width:84%}
+  #cap.on{opacity:1}
+  #cap b{display:inline-block;white-space:nowrap;font-size:2.8cqw;letter-spacing:.14em;text-transform:uppercase;padding:.6cqw 2.2cqw;background:#16191dd9;border:1px solid var(--line);border-radius:22px;text-shadow:0 0 14px #4cc9f066}
+  #cap span{display:block;margin-top:.9cqw;font-size:1.7cqw;letter-spacing:.08em;color:var(--text);text-shadow:0 0 6px #000,0 0 16px #000}
+  #flash{position:absolute;inset:0;z-index:9;background:#cfe9e6;opacity:0;pointer-events:none}
+  #flash.go{animation:fl .5s ease-out}
+  @keyframes fl{0%{opacity:.85}100%{opacity:0}}
+  .bar-top{position:absolute;left:0;right:0;top:0;height:3px;background:#ffffff14;z-index:8}
+  .bar-top i{display:block;height:100%;width:0;background:var(--accent)}
+  /* panel genérico */
+  .panel{background:#16191dd9;border:1px solid var(--frame);border-radius:22px;padding:1.4cqw 1.8cqw}
+  .lbl{font-size:1.5cqw;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  /* especialización */
+  #spec{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:10cqh;gap:2.2cqw;opacity:0;transition:opacity .5s}
+  #spec .grid{display:grid;grid-template-columns:repeat(4,15cqw);gap:1.4cqw}
+  .card{position:relative;text-align:center;padding:1.6cqw .6cqw;border:1px solid var(--frame);border-radius:22px;background:#16191dcc;font-size:1.9cqw;letter-spacing:.1em;text-transform:uppercase;transition:all .5s;opacity:0;transform:translateY(2cqw)}
+  .card.show{opacity:1;transform:none}
+  .card svg{width:5cqw;height:5cqw;display:block;margin:0 auto .6cqw;color:var(--text)}
+  .card.pick{border-color:var(--good);box-shadow:0 0 30px #57cc9966;color:var(--good)}
+  .card.pick svg{color:var(--good)}
+  .card.lock{opacity:.35;filter:grayscale(1)}
+  .card .lk{position:absolute;right:.7cqw;top:.7cqw;width:2cqw;height:2cqw;opacity:0}
+  .card.lock .lk{opacity:1}
+  #trade{display:flex;align-items:center;gap:2cqw;opacity:0;transition:opacity .6s}
+  #trade.on{opacity:1}
+  .nat{min-width:17cqw;text-align:center}
+  .nat .nm{font-size:2.4cqw;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .nat .sp{font-size:1.6cqw;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:.3cqw}
+  #lane{position:relative;width:30cqw;height:7cqw;border-top:1px dashed #4a525c;border-bottom:1px dashed #4a525c}
+  #crate{position:absolute;top:50%;left:0;width:4cqw;height:4cqw;margin-top:-2cqw;color:var(--warn);transition:left 3.2s cubic-bezier(.5,0,.5,1)}
+  #crate svg{width:100%;height:100%}
+  #price{position:absolute;left:0;right:0;top:-3cqw;text-align:center;font-size:1.8cqw;color:var(--gold);letter-spacing:.1em}
+  #deliv{position:absolute;left:0;right:0;bottom:-3cqw;text-align:center;font-size:1.6cqw;color:var(--good);letter-spacing:.1em;opacity:0;transition:opacity .4s}
+  /* HUD de batalla */
+  #bhud{opacity:0;transition:opacity .4s}
+  #bhud .tl{position:absolute;left:3cqw;top:3cqh;display:flex;gap:1.4cqw}
+  #bhud .stat{min-width:13cqw;text-align:center}
+  #bhud .stat b{display:block;font-size:3.2cqw;font-weight:700}
+  #ticker{position:absolute;right:3cqw;top:3cqh;width:26cqw;display:flex;flex-direction:column;gap:.6cqw;align-items:flex-end}
+  #ticker div{font-size:1.5cqw;letter-spacing:.1em;text-transform:uppercase;padding:.35cqw 1.2cqw;background:#16191dd9;border:1px solid var(--frame);border-radius:14px;animation:tk 4s forwards}
+  #ticker div.hot{border-color:var(--warn);color:var(--warn)}
+  #ticker div.surr{border-color:var(--good);color:var(--good)}
+  #ticker div.mod{border-color:var(--bad);color:var(--bad)}
+  @keyframes tk{0%{opacity:0;transform:translateX(2cqw)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+  /* guerra terrestre */
+  #ground{opacity:0;transition:opacity .5s}
+  #ground .bars{position:absolute;right:4cqw;top:50%;transform:translateY(-50%);width:27cqw;display:flex;flex-direction:column;gap:1.3cqw}
+  .row .t{display:flex;justify-content:space-between;font-size:1.7cqw;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4cqw}
+  .row .bg{height:1.1cqw;border-radius:9px;background:#ffffff18;overflow:hidden}
+  .row .bg i{display:block;height:100%;width:0;border-radius:9px;transition:width .25s linear}
+  #phase{position:absolute;left:4cqw;top:50%;transform:translateY(-50%);width:25cqw;display:flex;flex-direction:column;gap:1cqw}
+  #phase div{font-size:2cqw;letter-spacing:.12em;text-transform:uppercase;padding:.8cqw 1.4cqw;border:1px solid var(--frame);border-radius:16px;color:var(--muted);transition:all .4s;background:#16191dcc}
+  #phase div.on{color:var(--text);border-color:var(--accent);box-shadow:0 0 22px #4cc9f044}
+  #phase div.done{color:var(--good);border-color:var(--good)}
+  #won{position:absolute;left:50%;top:18cqh;transform:translateX(-50%) scale(.8);font-size:4.2cqw;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--good);text-shadow:0 0 30px #57cc99;opacity:0;transition:all .5s}
+  #won.on{opacity:1;transform:translateX(-50%) scale(1)}
+  /* social */
+  #social{opacity:0;transition:opacity .5s;display:flex;align-items:center;justify-content:center;gap:5cqw}
+  #chat{width:36cqw;display:flex;flex-direction:column;gap:1.1cqw}
+  .msg{padding:.9cqw 1.5cqw;border-radius:20px;font-size:1.9cqw;max-width:30cqw;opacity:0;transform:translateY(1.4cqw);transition:all .4s;background:#1b1f24;border:1px solid var(--frame)}
+  .msg.show{opacity:1;transform:none}
+  .msg.me{align-self:flex-end;border-color:var(--accent);background:#10303a}
+  .msg.bad{border-color:var(--bad)}
+  .msg i{display:block;font-style:normal;font-size:1.3cqw;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.2cqw}
+  #rank{width:30cqw}
+  #rank .rw{display:grid;grid-template-columns:2.2cqw 1fr 6cqw;gap:1cqw;align-items:center;font-size:1.8cqw;margin:.9cqw 0;opacity:0;transition:opacity .4s}
+  #rank .rw.show{opacity:1}
+  #rank .rb{height:1cqw;border-radius:9px;background:#ffffff18;overflow:hidden}
+  #rank .rb i{display:block;height:100%;width:0;border-radius:9px;transition:width 1.4s ease-out}
+  /* final */
+  #end{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;transition:opacity .8s;background:radial-gradient(ellipse at center,#0b1a22cc,#04060c 75%)}
+  #end h2{margin:0;font-size:5.2cqw;letter-spacing:.22em;text-transform:uppercase;font-weight:700;padding-left:.22em}
+  #end h1{margin:2cqw 0 0;font-size:3cqw;letter-spacing:.5em;text-transform:uppercase;color:var(--accent);padding-left:.5em}
+  #end p{margin:2cqw 0 0;font-size:2cqw;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  #hint{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:20;font:13px/1 var(--font);letter-spacing:.1em;color:#8a9aa3;text-transform:uppercase;transition:opacity 1s}
+  #start{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:#04060ce6;cursor:pointer}
+  #start b{font-size:3cqw;letter-spacing:.3em;text-transform:uppercase;border:1px solid var(--line);border-radius:22px;padding:1.2cqw 3cqw}
+</style></head>
+<body>
+<div id="stage">
+  <canvas id="g"></canvas>
+  <canvas id="c"></canvas>
+  <div class="layer" id="title"><div class="logo" id="logo"></div><h1>Orbital Domination</h1><p>Una galaxia · Una sola nación en pie</p></div>
+  <div class="layer" id="spec">
+    <div class="lbl" id="specTitle" style="font-size:2cqw">Elige tus 2 especialidades</div>
+    <div class="grid" id="specGrid"></div>
+    <div id="trade">
+      <div class="panel nat"><div class="nm" style="color:#57cc99">Tú</div><div class="sp" id="mySpec">Energía · Naves</div></div>
+      <div id="lane"><div id="price">₡ 480.0k</div><div id="crate"></div><div id="deliv">20 cazas entregados</div></div>
+      <div class="panel nat"><div class="nm" style="color:#ef476f">Vega</div><div class="sp">Cazas · Misiles</div></div>
+    </div>
+  </div>
+  <div class="layer" id="bhud">
+    <div class="tl">
+      <div class="panel stat"><span class="lbl">Naves en combate</span><b id="bN">0</b></div>
+      <div class="panel stat"><span class="lbl">Tiempo de batalla</span><b id="bT">00:00</b></div>
+    </div>
+    <div id="ticker"></div>
+  </div>
+  <div class="layer" id="ground">
+    <div id="phase"></div>
+    <div class="bars" id="gbars"></div>
+    <div id="won">Planeta conquistado</div>
+  </div>
+  <div class="layer" id="social">
+    <div id="chat"></div>
+    <div class="panel" id="rank"><div class="lbl" style="margin-bottom:.6cqw">Ranking · día 14 de 21</div></div>
+  </div>
+  <div class="layer" id="end"><h2>Última nación en pie</h2><h1>Orbital Domination</h1><p>Elige tu especialidad · Forja alianzas · Domina la órbita</p></div>
+  <div id="cap"><b></b><span></span></div>
+  <div id="flash"></div>
+  <div class="bar-top"><i id="prog"></i></div>
+  <div id="start"><b>Pulsa para empezar</b></div>
+</div>
+<div id="hint">clic/espacio: pausa · R: reiniciar · ←/→: escenas</div>
+
+<script src="shared/gamedata.js"></script>
+<script src="shared/battlesim.js"></script>
+<script src="shared/icons.js"></script>
+<script type="module">
+import * as THREE from './vendor/three.module.js';
+import { BattleViewer } from './js/battle3d.js';
+
+const GD = window.GameData, BS = window.BattleSim, Icons = window.Icons;
+const TOTAL = 86;
+const $ = id => document.getElementById(id);
+const ic = (n, size, color) => Icons.svg(n, { size: size || '1em', color });
+
+/* ============================ utilidades ============================ */
+function rngOf(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+const NATION = ['#4cc9f0', '#ef476f', '#ffd166', '#57cc99', '#c77dff', '#ff9f1c', '#2ec4b6', '#f72585'];
+
+/* ============================ subtítulos ============================ */
+// [desde, hasta, título, subtítulo] en segundos del tráiler
+const CAPS = [
+  [1.5, 6, 'Un mapgame espacial', 'Hecho para jugar con tus amigos'],
+  [8, 13, 'Funda tu nación', 'Hasta 20 naciones en una galaxia de 44 sistemas'],
+  [13.5, 18.5, 'Controla los sistemas clave', 'Cada región tiene uno: +25 % de PIB para quien lo domina'],
+  [20, 25, 'No puedes investigarlo todo', 'Elige 2 especialidades de 8. Las demás, te las venden'],
+  [26, 30.5, 'Compra armas, no planos', 'Quien las fabrica te las entrega en tu planeta'],
+  [32, 38.5, 'Batallas en tiempo real', 'Ordena atacar, mantener, rodear o huir'],
+  [40, 49, 'Hasta 300 naves por batalla', 'Combates de hasta 30 minutos'],
+  [51, 59.5, 'Calor, módulos y rendiciones', 'Las armas se sobrecalientan. Los barcos heridos se rinden'],
+  [61, 71.5, 'Bloquea. Bombardea. Invade.', 'Quien domina la órbita casi gana la guerra'],
+  [73, 80, 'Alianzas, traiciones y mercado', 'La temporada dura 14 a 21 días'],
+];
+const capEl = $('cap'); let capShown = -2;
+function updateCap(T) {
+  let idx = -1;
+  for (let i = 0; i < CAPS.length; i++) if (T >= CAPS[i][0] && T < CAPS[i][1]) idx = i;
+  if (idx === capShown) return;
+  capShown = idx;
+  if (idx < 0) { capEl.classList.remove('on'); return; }
+  capEl.querySelector('b').textContent = CAPS[idx][2];
+  capEl.querySelector('span').textContent = CAPS[idx][3];
+  capEl.classList.add('on');
+}
+
+/* ============================ galaxia (canvas 2D) ============================ */
+const gc = $('g'), gx = gc.getContext('2d');
+function sizeCanvas() { const r = $('stage').getBoundingClientRect(); gc.width = Math.round(r.width); gc.height = Math.round(r.height); }
+const R = rngOf(77);
+const stars = Array.from({ length: 160 }, () => ({ x: R(), y: R(), r: R() * 1.3 + .2, a: R() * .6 + .2, s: R() * .4 + .1 }));
+// 44 sistemas por muestreo de discos
+const nodes = [];
+for (let tries = 0; nodes.length < 44 && tries < 4000; tries++) {
+  const p = { x: .06 + R() * .88, y: .12 + R() * .76 };
+  if (nodes.every(q => Math.hypot((q.x - p.x) * 1.78, q.y - p.y) > .105)) nodes.push(p);
+}
+const edges = []; const adj = nodes.map(() => []);
+nodes.forEach((p, i) => {
+  nodes.map((q, j) => [j, Math.hypot((q.x - p.x) * 1.78, q.y - p.y)]).filter(a => a[0] !== i).sort((a, b) => a[1] - b[1]).slice(0, 2).forEach(([j]) => {
+    if (!adj[i].includes(j)) { edges.push([i, j]); adj[i].push(j); adj[j].push(i); }
+  });
+});
+// 8 naciones: semillas lejanas entre sí, reparto por saltos
+const seeds = [0];
+while (seeds.length < 8) {
+  let best = -1, bd = -1;
+  nodes.forEach((p, i) => { const d = Math.min(...seeds.map(s => Math.hypot((nodes[s].x - p.x) * 1.78, nodes[s].y - p.y))); if (d > bd) { bd = d; best = i; } });
+  seeds.push(best);
+}
+const owner = nodes.map(() => -1), claim = nodes.map(() => 99);
+{ const q = []; seeds.forEach((s, k) => { owner[s] = k; claim[s] = 0; q.push(s); });
+  while (q.length) { const i = q.shift(); adj[i].forEach(j => { if (owner[j] < 0) { owner[j] = owner[i]; claim[j] = claim[i] + 1; q.push(j); } }); }
+  claim.forEach((c, i) => claim[i] = c * .9 + R() * .5); }
+const hubs = [seeds[1] === 0 ? 3 : 5, 14, 23, 33].map(i => i % nodes.length);
+const convoys = Array.from({ length: 12 }, () => ({ e: Math.floor(R() * edges.length), p: R(), v: .12 + R() * .2, k: Math.floor(R() * 8) }));
+let galMode = 'dim', galT = 0;
+function drawGalaxy(T, local) {
+  const W = gc.width, H = gc.height;
+  gx.clearRect(0, 0, W, H);
+  const bg = gx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * .7);
+  bg.addColorStop(0, '#12202b'); bg.addColorStop(1, '#05070b'); gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  for (const s of stars) { gx.globalAlpha = s.a * (.7 + .3 * Math.sin(T * s.s * 3 + s.x * 9)); gx.fillStyle = '#cfe9e6'; gx.fillRect(s.x * W, s.y * H, s.r, s.r); }
+  gx.globalAlpha = 1;
+  const zoom = 1 + .012 * Math.min(local, 12), ox = W * .5 * (1 - zoom), oy = H * .5 * (1 - zoom);
+  const P = i => [nodes[i].x * W * zoom + ox, nodes[i].y * H * zoom + oy];
+  const dim = galMode === 'dim';
+  const owned = i => !dim && local > claim[i] + 1.2;
+  // rutas
+  for (const [a, b] of edges) {
+    const [x1, y1] = P(a), [x2, y2] = P(b);
+    const same = owned(a) && owned(b) && owner[a] === owner[b], clash = owned(a) && owned(b) && owner[a] !== owner[b];
+    gx.lineWidth = same ? 2.2 : 1;
+    gx.strokeStyle = same ? NATION[owner[a]] : clash ? '#ef476f88' : '#4a525c88';
+    gx.setLineDash(clash ? [6, 6] : []); gx.lineDashOffset = -T * 20;
+    gx.beginPath(); gx.moveTo(x1, y1); gx.lineTo(x2, y2); gx.stroke();
+  }
+  gx.setLineDash([]);
+  // sistemas
+  nodes.forEach((n, i) => {
+    const [x, y] = P(i); const o = owned(i);
+    const col = o ? NATION[owner[i]] : '#6c7884';
+    if (o) { const g = gx.createRadialGradient(x, y, 0, x, y, W * .05); g.addColorStop(0, col + '66'); g.addColorStop(1, col + '00'); gx.fillStyle = g; gx.beginPath(); gx.arc(x, y, W * .05, 0, 7); gx.fill(); }
+    const grow = o ? clamp((local - claim[i] - 1.2) * 2, 0, 1) : 0;
+    gx.fillStyle = col; gx.beginPath(); gx.arc(x, y, W * (.0045 + .0035 * grow), 0, 7); gx.fill();
+    if (seeds.includes(i) && o) { gx.strokeStyle = '#fff'; gx.lineWidth = 1.5; gx.beginPath(); gx.arc(x, y, W * .0125, 0, 7); gx.stroke(); }
+    if (hubs.includes(i) && !dim && local > 5) {
+      const k = (T * .9) % 1; gx.strokeStyle = '#ffb703'; gx.lineWidth = 2; gx.globalAlpha = 1 - k;
+      gx.beginPath(); gx.arc(x, y, W * (.012 + .02 * k), 0, 7); gx.stroke(); gx.globalAlpha = 1;
+      gx.fillStyle = '#ffb703'; gx.beginPath(); for (let a = 0; a < 5; a++) { const r = a % 2 ? W * .006 : W * .013, t = -Math.PI / 2 + a * Math.PI * .4; gx.lineTo(x + Math.cos(t) * r, y + Math.sin(t) * r); } gx.closePath(); gx.fill();
+    }
+  });
+  // convoyes
+  if (!dim) for (const c of convoys) {
+    c.p += c.v * .016; if (c.p > 1) { c.p = 0; c.e = Math.floor(R() * edges.length); }
+    const [a, b] = edges[c.e]; if (!owned(a)) continue;
+    const [x1, y1] = P(a), [x2, y2] = P(b);
+    gx.fillStyle = NATION[c.k]; gx.beginPath(); gx.arc(x1 + (x2 - x1) * c.p, y1 + (y2 - y1) * c.p, W * .0035, 0, 7); gx.fill();
+  }
+}
+
+/* ============================ especialización ============================ */
+const BR = [['energia', 'Energía'], ['balistica', 'Balística'], ['misiles', 'Misiles'], ['sistemas', 'Sistemas'], ['naves', 'Naves'], ['cazas', 'Cazas'], ['terrestre', 'Terrestre'], ['orbital', 'Orbital']];
+$('specGrid').innerHTML = BR.map(b => `<div class="card" data-b="${b[0]}">${ic('t_' + b[0], '5cqw')}<span class="lk">${ic('lock', '100%')}</span>${b[1]}</div>`).join('');
+$('crate').innerHTML = ic('deliver', '100%');
+$('logo').innerHTML = ic('planet', '100%');
+function specScene(l) {
+  const cards = [...document.querySelectorAll('#specGrid .card')];
+  cards.forEach((c, i) => {
+    c.classList.toggle('show', l > .3 + i * .12);
+    const pick = c.dataset.b === 'energia' || c.dataset.b === 'naves';
+    c.classList.toggle('pick', l > 2.4 && pick);
+    c.classList.toggle('lock', l > 3.4 && !pick);
+  });
+  $('specTitle').style.opacity = l < 5.5 ? 1 : 0;
+  const sg = $('specGrid'); sg.style.transition = 'all .6s'; sg.style.transformOrigin = 'top center'; sg.style.transform = l > 6 ? 'scale(.6)' : 'none'; sg.style.marginBottom = l > 6 ? '-10cqw' : '0';
+  $('trade').classList.toggle('on', l > 6.4);
+  $('crate').style.left = l > 7.4 ? 'calc(100% - 4cqw)' : '0';
+  $('deliv').style.opacity = l > 10.4 ? 1 : 0;
+}
+
+/* ============================ batalla 3D ============================ */
+const comps = {}; GD.BASE_COMPONENTS.forEach(c => comps[c.id] = c);
+const X = (id, type, p) => comps[id] = { id, type, points: { potencia: 20, fiabilidad: p || 8, eficiencia: p ? 0 : 2 } };
+X('x_misil', 'misil'); X('x_pd', 'pd', 10); X('x_escudo', 'escudo', 10); X('x_rail', 'railgun');
+const L = id => comps[id];
+const stat = (hull, c) => GD.designStats({ hull, components: c }, L);
+const simStats = s => ({ hp: s.hp, speed: s.speed, size: s.size, role: s.role, armor: s.armor, shield: s.shield, pd: s.pd, sensors: s.sensors, ecm: s.ecm, hangar: s.hangar || 0, special: s.special || [], cooling: s.cooling || 0, weapons: s.weapons.map(w => ({ type: w.type, dmgType: w.dmgType, range: w.range, dmg: w.dmg, rel: w.rel, antiCapital: w.antiCapital })) });
+const P = {
+  caza: stat('caza', ['bc_laser', 'bc_blind', 'bc_motor']), corb: stat('corbeta', ['bc_canon', 'bc_laser', 'bc_blind', 'bc_motor']), misil: stat('corbeta', ['x_misil', 'x_misil', 'x_pd', 'bc_motor']),
+  frag: stat('fragata', ['bc_canon', 'bc_laser', 'bc_laser', 'bc_blind', 'x_escudo', 'bc_motor']),
+  dest: stat('destructor', ['x_rail', 'x_rail', 'bc_laser', 'x_misil', 'bc_blind', 'x_escudo', 'bc_motor', 'bc_motor']),
+  cruc: stat('crucero', ['x_rail', 'x_rail', 'bc_laser', 'bc_laser', 'bc_canon', 'bc_blind', 'x_escudo', 'x_pd', 'bc_motor', 'bc_motor']),
+  port: stat('portanaves', ['bc_laser', 'bc_laser', 'bc_blind', 'x_escudo', 'x_pd', 'bc_motor', 'bc_motor'])
+};
+const g = (name, hull, count, s, o) => ({ name, hull, count, stats: simStats(s), owner: o });
+const CUTS = {
+  medias: o => o === 'me'
+    ? [g('Corbetas', 'corbeta', 12, P.corb, o), g('Fragatas', 'fragata', 6, P.frag, o), g('Cazas', 'caza', 30, P.caza, o)]
+    : [g('Corbetas', 'corbeta', 12, P.corb, o), g('Misileras', 'corbeta', 6, P.misil, o), g('Cazas', 'caza', 30, P.caza, o)],
+  masiva: o => [g('Cruceros', 'crucero', 12, P.cruc, o), g('Destructores', 'destructor', 20, P.dest, o), g('Fragatas', 'fragata', 40, P.frag, o), g('Corbetas', 'corbeta', 48, P.corb, o), g('Cazas', 'caza', 60, P.caza, o), g('Portanaves', 'portanaves', 2, P.port, o)]
+};
+const colors = { me: ['#1d6fb5', '#57cc99', '#f1faee'], foe: ['#7a1f2b', '#ef476f', '#f1faee'] };
+let viewer = null, sim = null, timer = null, bscene = null;
+function stopBattle() { clearInterval(timer); timer = null; if (viewer) { try { viewer.destroy(); } catch (e) { } viewer = null; } $('c').style.opacity = 0; }
+function startBattle(kind, ffSeconds, speed, seed) {
+  stopBattle();
+  const old = $('c'); const c = old.cloneNode(); old.replaceWith(c);
+  sim = new BS.BattleSim({ seed, maxTime: 1800, sides: { A: CUTS[kind]('me'), B: CUTS[kind]('foe') } });
+  for (let i = 0; i < ffSeconds * 2 && !sim.over; i++) sim.step();
+  viewer = new BattleViewer(c, { nationInfo: o => ({ colors: colors[o] || colors.foe, color: new THREE.Color((colors[o] || colors.foe)[1]) }), relOf: o => o === 'me' ? 'mine' : 'war', delay: 500 / speed * 1.3 + 60 });
+  viewer.setMeta(sim.meta()); viewer.setGroups(sim.groupsMeta()); viewer.start(); viewer.pushFrame(sim.snapshot());
+  viewer.onEvent = ev => {
+    const txt = { hot: 'Arma sobrecalentada', surr: 'Nave se rinde', mod: 'Módulo dañado' }[ev.k];
+    if (!txt || document.querySelectorAll('#ticker div').length > 4 || Math.random() > .35) return;
+    const d = document.createElement('div'); d.className = ev.k; d.innerHTML = ic(ev.k === 'hot' ? 'heat' : ev.k === 'surr' ? 'surrender' : 'warn', '1.2em') + ' ' + txt;
+    $('ticker').appendChild(d); setTimeout(() => d.remove(), 4000);
+  };
+  timer = setInterval(() => {
+    if (paused || !sim || sim.over) return;
+    sim.step(); viewer.setGroups(sim.groupsMeta()); viewer.pushFrame(sim.snapshot());
+    $('bN').textContent = sim.alive('A').length + sim.alive('B').length;
+    const t = Math.round(sim.t); $('bT').textContent = String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+  }, 500 / speed);
+  $('c').style.opacity = 1;
+}
+
+/* ============================ guerra terrestre ============================ */
+const PHASES = ['Bloqueo', 'Bombardeo', 'Escudo caído', 'Desembarco'];
+$('phase').innerHTML = PHASES.map((p, i) => `<div data-i="${i}">${ic(['blockade', 'bombard', 'shield', 'fleet'][i], '1.1em')} ${p}</div>`).join('');
+const BARS = [['PIB del planeta', 'var(--warn)', 'research'], ['Defensa', 'var(--bad)', 'war'], ['Escudo planetario', 'var(--accent)', 'shield'], ['Milicia', 'var(--good)', 'fleet']];
+$('gbars').innerHTML = BARS.map((b, i) => `<div class="row"><div class="t"><span>${ic(b[2], '1.1em')} ${b[0]}</span><span id="gv${i}">100%</span></div><div class="bg"><i id="gb${i}" style="background:${b[1]};width:100%"></i></div></div>`).join('');
+function groundVals(l) {
+  const seg = (a, b) => clamp((l - a) / (b - a), 0, 1);
+  return [100 * (1 - seg(.8, 2)), 100 * (1 - .8 * seg(3, 7)), 100 * (1 - seg(7.2, 8.8)), 100 * (1 - seg(9, 11.4))];
+}
+function groundScene(l) {
+  const v = groundVals(l);
+  v.forEach((x, i) => { $('gb' + i).style.width = x + '%'; $('gv' + i).textContent = Math.round(x) + '%'; });
+  const ph = l < .8 ? -1 : l < 3 ? 0 : l < 7.2 ? 1 : l < 9 ? 2 : 3;
+  document.querySelectorAll('#phase div').forEach((d, i) => { d.classList.toggle('on', i === ph); d.classList.toggle('done', i < ph); });
+  $('won').classList.toggle('on', l > 11.5);
+}
+function drawGround(T, l) {
+  const W = gc.width, H = gc.height, cx = W * .5, cy = H * .5, r = H * .2;
+  gx.clearRect(0, 0, W, H);
+  const bg = gx.createRadialGradient(cx, cy, 0, cx, cy, W * .7); bg.addColorStop(0, '#10202c'); bg.addColorStop(1, '#04060b'); gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  for (const s of stars) { gx.globalAlpha = s.a; gx.fillStyle = '#cfe9e6'; gx.fillRect(s.x * W, s.y * H, s.r, s.r); } gx.globalAlpha = 1;
+  const v = groundVals(l);
+  // planeta
+  const owned = l > 11.5;
+  const pg = gx.createRadialGradient(cx - r * .35, cy - r * .35, r * .1, cx, cy, r);
+  pg.addColorStop(0, owned ? '#7fe0b0' : '#e07a5f'); pg.addColorStop(1, owned ? '#1d6a4a' : '#5a2418');
+  gx.fillStyle = pg; gx.beginPath(); gx.arc(cx, cy, r, 0, 7); gx.fill();
+  // escudo
+  if (v[2] > 0) { gx.strokeStyle = '#4cc9f0'; gx.globalAlpha = .25 + .5 * (v[2] / 100) * (.7 + .3 * Math.sin(T * 6)); gx.lineWidth = 4; gx.beginPath(); gx.arc(cx, cy, r * 1.22, 0, 7); gx.stroke(); gx.fillStyle = '#4cc9f012'; gx.fill(); gx.globalAlpha = 1; }
+  // bloqueo
+  if (l > .8 && l < 11.5) { gx.strokeStyle = '#ef476f'; gx.setLineDash([10, 8]); gx.lineDashOffset = -T * 30; gx.lineWidth = 2; gx.beginPath(); gx.arc(cx, cy, r * 1.7, 0, 7); gx.stroke(); gx.setLineDash([]); }
+  // flota atacante en órbita
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    const a = T * .35 + i * Math.PI * 2 / n, fr = r * 1.7, x = cx + Math.cos(a) * fr, y = cy + Math.sin(a) * fr * .55;
+    if (l > 3 && l < 7.2 && i % 2 === 0) { gx.strokeStyle = '#ffb703'; gx.lineWidth = 2; gx.globalAlpha = .6 + .4 * Math.sin(T * 30 + i); gx.beginPath(); gx.moveTo(x, y); gx.lineTo(cx + (Math.random() - .5) * r, cy + (Math.random() - .5) * r * .9); gx.stroke(); gx.globalAlpha = 1; }
+    gx.save(); gx.translate(x, y); gx.rotate(a + Math.PI / 2 + Math.PI / 2); gx.fillStyle = '#57cc99'; gx.beginPath(); gx.moveTo(0, -H * .018); gx.lineTo(H * .011, H * .014); gx.lineTo(-H * .011, H * .014); gx.closePath(); gx.fill(); gx.restore();
+  }
+  // explosiones de bombardeo
+  if (l > 3 && l < 7.2) for (let k = 0; k < 3; k++) { const a = T * 7 + k * 2.1, rr = r * (.2 + .6 * ((Math.sin(a * 1.7) + 1) / 2)); gx.fillStyle = '#ff9f1c'; gx.globalAlpha = .5; gx.beginPath(); gx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a * 1.3) * rr, 3 + 7 * ((a * 2) % 1), 0, 7); gx.fill(); gx.globalAlpha = 1; }
+  // cápsulas de desembarco
+  if (l > 9) for (let k = 0; k < 14; k++) {
+    const t0 = 9 + k * .15, q = clamp((l - t0) / 1.2, 0, 1); if (q <= 0 || q >= 1) continue;
+    const a = k * 2.4, sx = cx + Math.cos(a) * r * 1.7, sy = cy + Math.sin(a) * r * .9, ex = cx + Math.cos(a) * r * .6, ey = cy + Math.sin(a) * r * .5;
+    gx.fillStyle = '#cfe9e6'; gx.beginPath(); gx.arc(sx + (ex - sx) * q, sy + (ey - sy) * q, 3, 0, 7); gx.fill();
+  }
+}
+
+/* ============================ social ============================ */
+const MSGS = [['Vega', 'Alianza contra Korvan? Te cubro el flanco', ''], ['Tú', 'Acepto. Yo pongo la flota, tú los misiles', 'me'], ['Korvan', 'Mi flota ya cruzó vuestro sistema clave...', 'bad'], ['Tú', 'Os vendo 40 fragatas a precio de amigo', 'me']];
+$('chat').innerHTML = MSGS.map(m => `<div class="msg ${m[2]}"><i>${m[0]}</i>${m[1]}</div>`).join('');
+const RANK = [['Tú', 94, '#57cc99'], ['Vega', 81, '#4cc9f0'], ['Korvan', 62, '#ef476f'], ['Dara', 41, '#ffd166'], ['Lyr', 24, '#c77dff']];
+$('rank').insertAdjacentHTML('beforeend', RANK.map((r, i) => `<div class="rw" data-i="${i}"><span>${i === 0 ? ic('crown', '1.3em', '#ffb703') : i + 1}</span><div><div style="font-size:1.6cqw;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3cqw">${r[0]}</div><div class="rb"><i data-w="${r[1]}" style="background:${r[2]}"></i></div></div><span style="text-align:right">${r[1]}k</span></div>`).join(''));
+function socialScene(l) {
+  document.querySelectorAll('#chat .msg').forEach((m, i) => m.classList.toggle('show', l > .6 + i * 1.5));
+  document.querySelectorAll('#rank .rw').forEach((r, i) => { const on = l > 1.2 + i * .35; r.classList.toggle('show', on); r.querySelector('i').style.width = on ? r.querySelector('i').dataset.w + '%' : '0'; });
+}
+
+/* ============================ escenas ============================ */
+const layers = ['title', 'spec', 'bhud', 'ground', 'social', 'end'];
+const show = (...ids) => layers.forEach(id => $(id).style.opacity = ids.includes(id) ? 1 : 0);
+const SCENES = [
+  { a: 0, b: 7, enter() { galMode = 'dim'; gc.style.opacity = 1; show('title'); stopBattle(); }, upd(l, T) { drawGalaxy(T, l); } },
+  { a: 7, b: 19, enter() { galMode = 'own'; gc.style.opacity = 1; show(); stopBattle(); }, upd(l, T) { drawGalaxy(T, l); } },
+  { a: 19, b: 31, enter() { galMode = 'dim'; show('spec'); stopBattle(); }, upd(l, T) { drawGalaxy(T, 0); specScene(l); } },
+  { a: 31, b: 39.5, enter() { show('bhud'); startBattle('medias', 0, 5, 3); }, upd() { } },
+  { a: 39.5, b: 50.5, enter() { show('bhud'); startBattle('masiva', 300, 7, 11); }, upd() { } },
+  { a: 50.5, b: 60.5, enter() { show('bhud'); startBattle('masiva', 780, 10, 11); }, upd() { } },
+  { a: 60.5, b: 72.5, enter() { show('ground'); stopBattle(); }, upd(l, T) { drawGround(T, l); groundScene(l); } },
+  { a: 72.5, b: 80.5, enter() { galMode = 'own'; show('social'); stopBattle(); }, upd(l, T) { drawGalaxy(T, 20 + l); socialScene(l); } },
+  { a: 80.5, b: TOTAL + 5, enter() { galMode = 'own'; show('end'); stopBattle(); }, upd(l, T) { drawGalaxy(T, 30 + l); } }
+];
+
+/* ============================ reloj principal ============================ */
+let T0 = 0, tNow = 0, paused = true, cur = -1, started = false;
+function seek(t) {
+  tNow = clamp(t, 0, TOTAL + 4); T0 = performance.now() - tNow * 1000; cur = -1; capShown = -2; $('ticker').innerHTML = '';
+}
+function flash() { const f = $('flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (!started) return;
+  if (paused) { T0 = now - tNow * 1000; return; }
+  tNow = (now - T0) / 1000;
+  if (tNow > TOTAL + 4) { paused = true; return; }
+  let si = SCENES.findIndex(s => tNow >= s.a && tNow < s.b); if (si < 0) si = SCENES.length - 1;
+  if (si !== cur) { cur = si; if (si > 0) flash(); SCENES[si].enter(); }
+  const sc = SCENES[si], l = tNow - sc.a;
+  sc.upd(l, tNow);
+  updateCap(tNow);
+  $('prog').style.width = Math.min(100, tNow / TOTAL * 100) + '%';
+  if (tNow > 38 && tNow < 80.5) $('hint').style.opacity = 0;
+}
+function begin(t) {
+  const pz = new URLSearchParams(location.search).get('pause');   // ?pause=2 congela a los 2 s de empezar (para capturas)
+  if (pz) setTimeout(() => paused = true, Number(pz) * 1000);
+  started = true; paused = false; $('start').remove(); sizeCanvas(); seek(t || 0); $('hint').style.opacity = .7; setTimeout(() => $('hint').style.opacity = 0, 5000);
+}
+window.addEventListener('resize', () => { sizeCanvas(); if (viewer) viewer.view.resize(); });
+const sceneStart = i => SCENES[clamp(i, 0, SCENES.length - 1)].a;
+window.addEventListener('keydown', e => {
+  if (!started) return;
+  if (e.code === 'Space') { paused = !paused; e.preventDefault(); }
+  else if (e.key === 'r' || e.key === 'R') { seek(0); paused = false; }
+  else if (e.key === 'ArrowRight') seek(sceneStart(cur + 1));
+  else if (e.key === 'ArrowLeft') seek(sceneStart(cur - 1));
+});
+document.addEventListener('click', e => { if (started && !e.target.closest('#start')) paused = !paused; });
+$('start').addEventListener('click', () => begin(Number(new URLSearchParams(location.search).get('t')) || 0));
+sizeCanvas(); requestAnimationFrame(frame);
+if (new URLSearchParams(location.search).has('auto')) begin(Number(new URLSearchParams(location.search).get('t')) || 0);
+window.__trailer = { seek, get t() { return tNow; }, begin };
+</script></body></html>

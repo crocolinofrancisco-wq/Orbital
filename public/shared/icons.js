@@ -237,6 +237,42 @@
     b_escudo: path('M2.5 20a9.5 9.5 0 0 1 19 0', FILL) + path('M5.5 20a6.5 6.5 0 0 1 13 0', 'stroke-dasharray="2 2"') + path('M1.5 20.5h21'),
     b_vivienda: path('M2.5 11L8 6l5.5 5M4 10v10h8V10') + path('M11.5 13.5L16 9.5l5.5 5V20h-9', FILL) + path('M2 20.5h20'),
 
+    // ===== Objetos espaciales, criaturas y batalla en vivo (v2) =====
+    blackhole: circ(12, 12, 3.3, SOLID) + '<ellipse cx="12" cy="12" rx="10.5" ry="3.8" transform="rotate(-18 12 12)"/>' + '<ellipse cx="12" cy="12" rx="7" ry="2.4" transform="rotate(-18 12 12)" stroke-opacity=".55"/>' + path('M3 7.5c3 1.5 6 4 9 4.5'),
+    portal: circ(12, 12, 9.5, 'stroke-dasharray="3 2"') + circ(12, 12, 6, FILL) + circ(12, 12, 2.4, SOLID) + path('M3.5 12h-2M22.5 12h-2'),
+    asteroid: poly('5,8 9,4 15,5 20,9 19,15 14,20 8,19 4,14', FILL) + circ(10, 10, 1.6) + circ(15, 14, 1.2) + path('M7.5 15.5l2-1.5'),
+    bio_asteroides: poly('3.5,11 6,5.5 11,4.5 12.5,8.5 18,7 20.5,12 17.5,17.5 11,19 6.5,16.5', FILL) + circ(9.5, 10, 1.2) + circ(15, 13.5, 1.6) + circ(8, 15, .8, SOLID) + path('M14 8l2 .5'),
+    nebula: path('M6.5 17a4 4 0 0 1 .3-8 5 5 0 0 1 9.4-1A4.5 4.5 0 0 1 17.5 17z', FILL) + circ(9, 12, .8, SOLID) + circ(14.5, 11, .8, SOLID) + circ(12, 14.5, .8, SOLID),
+    ruins: path('M3 20.5h18M5 20.5V10l4-3 2 2 2-2.5 3 3.5v10.5', FILL) + path('M9 20.5v-4h3v4M14.5 13.5h2'),
+    search: circ(10.5, 10.5, 6.5, FILL) + path('M15.5 15.5L21 21'),
+    robot: `<rect x="4.5" y="8" width="15" height="11" rx="2.5" ${FILL}/>` + path('M12 8V4.5M9.5 4.5h5') + circ(9.5, 13, 1.5, SOLID) + circ(14.5, 13, 1.5, SOLID) + path('M9 16.8h6M2.5 12v3M21.5 12v3'),
+    lair: path('M12 2.5c-4.7 0-8 3.3-8 7.8 0 2.7 1.3 4.6 3 5.7v4.5h10V16c1.7-1.1 3-3 3-5.7 0-4.5-3.3-7.8-8-7.8z', FILL) + circ(8.8, 10.8, 2, SOLID) + circ(15.2, 10.8, 2, SOLID) + path('M3 3.5l3 3M21 3.5l-3 3'),
+    leviathan: path('M2.5 17c3-6 5.5 2 8-4s4.5 1 6.5-5.5c.7-2.3 2.5-3 4.5-2.5-.3 2.5-1.5 3.5-2.5 4C16 14 15 19 12 19c-3 0-6.5-4-9.5-2z', FILL) + circ(18.8, 5.8, .9, SOLID) + path('M5.5 15l-.5-2.5M9.5 12.5L9 10M13 11l.5-2.5'),
+    medusa: path('M4.5 11a7.5 7.5 0 0 1 15 0z', FILL) + path('M7 11v5.5M10 11v8M14 11v8M17 11v5.5', 'stroke-dasharray="1.2 1.5"') + circ(9.5, 8, .9, SOLID) + circ(14.5, 8, .9, SOLID),
+    drone: circ(12, 12, 3.2, FILL) + path('M9 9L5.5 5.5M15 9l3.5-3.5M9 15l-3.5 3.5M15 15l3.5 3.5') + circ(5.5, 5.5, 1.6) + circ(18.5, 5.5, 1.6) + circ(5.5, 18.5, 1.6) + circ(18.5, 18.5, 1.6),
+    devourer: circ(12, 12, 9, FILL) + path('M3.5 12h5l2-3 2 3 2-3 2 3h4M7 8l1.5 2M17 8l-1.5 2M8 16.5l1.5-2.5M16 16.5L14.5 14') + circ(9.5, 12.8, 1, SOLID) + circ(14.5, 12.8, 1, SOLID),
+    h_leviatan: path('M2.5 17c3-6 5.5 2 8-4s4.5 1 6.5-5.5c.7-2.3 2.5-3 4.5-2.5-.3 2.5-1.5 3.5-2.5 4C16 14 15 19 12 19c-3 0-6.5-4-9.5-2z', FILL) + circ(18.8, 5.8, .9, SOLID),
+    h_plaga: circ(12, 12, 3.2, FILL) + path('M9 9L5.5 5.5M15 9l3.5-3.5M9 15l-3.5 3.5M15 15l3.5 3.5') + circ(5.5, 5.5, 1.6) + circ(18.5, 5.5, 1.6) + circ(5.5, 18.5, 1.6) + circ(18.5, 18.5, 1.6),
+    h_medusa: path('M4.5 11a7.5 7.5 0 0 1 15 0z', FILL) + path('M7 11v5.5M10 11v8M14 11v8M17 11v5.5', 'stroke-dasharray="1.2 1.5"'),
+    h_devorador: circ(12, 12, 9, FILL) + path('M3.5 12h5l2-3 2 3 2-3 2 3h4') + circ(9.5, 12.8, 1, SOLID) + circ(14.5, 12.8, 1, SOLID),
+    h_estacion: poly(ngon(8, 9.5), FILL) + circ(12, 12, 3.5) + path('M12 2.5v6M12 15.5v6M2.5 12h6M15.5 12h6'),
+    h_planeta: circ(12, 12, 6.5, FILL) + '<ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-20 12 12)"/>',
+    c_maw: path('M3 9c3 2 6 2 9 0 3 2 6 2 9 0v2c-3 1.5-6 1.5-9 0-3 1.5-6 1.5-9 0z', FILL) + path('M6 12.5v3M9 13.5v3.5M15 13.5v3.5M18 12.5v3'),
+    tac_attack: path('M12 2.5l4.5 9.5H7.5z', 'fill="currentColor" fill-opacity=".45"') + path('M12 12v9.5M7.5 17.5L12 22l4.5-4.5'),
+    tac_hold: poly(ngon(6, 9), FILL) + path('M8.5 9.5v5M15.5 9.5v5M8.5 12h7'),
+    tac_kite: path('M3 20l7-7M10 13l-.5-4.5 4.5.5M10 13l4.5.5') + circ(17, 7, 4.2, FILL) + circ(17, 7, 1.2, SOLID),
+    tac_retreat: path('M20 12H5M10 7l-5 5 5 5') + path('M20 5v14', 'stroke-dasharray="2 2"'),
+    focus: circ(12, 12, 9) + circ(12, 12, 4.5, FILL) + path('M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5') + circ(12, 12, 1.1, SOLID),
+    calendar: `<rect x="3.5" y="5" width="17" height="15.5" rx="2" ${FILL}/>` + path('M3.5 10h17M8 3v4M16 3v4') + circ(8.5, 14, .9, SOLID) + circ(12, 14, .9, SOLID) + circ(15.5, 14, .9, SOLID),
+    live: circ(12, 12, 3.3, SOLID) + path('M6.8 6.8a7.3 7.3 0 0 0 0 10.4M17.2 6.8a7.3 7.3 0 0 1 0 10.4M3.8 3.8a11.5 11.5 0 0 0 0 16.4M20.2 3.8a11.5 11.5 0 0 1 0 16.4'),
+    replay: path('M4 12a8 8 0 1 0 2.6-5.9M4 4v4.5h4.5') + poly('10.5,9 16,12 10.5,15', SOLID),
+    speed2: poly('4,6 12,12 4,18', SOLID) + poly('12,6 20,12 12,18', SOLID),
+    pause: `<rect x="6.5" y="5" width="4" height="14" ${SOLID}/><rect x="13.5" y="5" width="4" height="14" ${SOLID}/>`,
+    play: poly('7,4.5 19,12 7,19.5', SOLID),
+    warp: path('M3 12h6M2 8h8M2 16h8') + poly('12,5 21,12 12,19 15,12', 'fill="currentColor" fill-opacity=".45"'),
+    cam: path('M3 8.5h4l1.5-2.5h7L17 8.5h4V19H3z', FILL) + circ(12, 13.5, 3.5),
+    shieldbar: path('M12 2.5l8.5 3v6c0 5-3.5 8.8-8.5 10.5C7 20.3 3.5 16.5 3.5 11.5v-6z', FILL),
+
     // ===== Ramas tecnológicas =====
     t_economia: circ(12, 12, 9, FILL) + path('M15.6 8.6a5 5 0 1 0 0 6.8') + line(12, 5, 12, 19),
     t_cazas: hullIcon('caza'),
@@ -245,10 +281,29 @@
     t_armas: poly(starPts(9, 10.5, 4.6), 'fill="currentColor" fill-opacity=".35"') + circ(12, 12, 2, SOLID),
     t_defensa: path('M12 2.5l8.5 3v6c0 5-3.5 8.8-8.5 10.5C7 20.3 3.5 16.5 3.5 11.5v-6z', FILL) + path('M12 6v12M7 10.5h10'),
     t_sistemas: poly(starPts(8, 10, 7.6), FILL) + circ(12, 12, 3.2),
-    t_orbital: circ(12, 12, 5, FILL) + circ(12, 12, 10, 'stroke-dasharray="2 2.5"') + circ(19.1, 4.9, 1.6, SOLID)
+    t_orbital: circ(12, 12, 5, FILL) + circ(12, 12, 10, 'stroke-dasharray="2 2.5"') + circ(19.1, 4.9, 1.6, SOLID),
+
+    // ===== v3: ramas de especialidad, armas, calor, guerra terrestre y mercado de unidades =====
+    t_energia: poly('13.5,2.5 5.5,13.5 11,13.5 9.5,21.5 18.5,10 13,10', FILL),
+    t_balistica: path('M4 20l8-8', 'stroke-width="3"') + path('M12 12l4-7 5 .5.5 5-7 4z', FILL) + path('M3 14l3 3M6 11l3 3'),
+    t_misiles: path('M3 21l3-6 9-9a3 3 0 0 1 4-1 3 3 0 0 1-1 4l-9 9z', FILL) + path('M6 15l3 3M5 13l-2.5.5M11 19l-.5 2.5'),
+    c_pulso: path('M2 12h3M8 12h3M14 12h3M20 12h2', 'stroke-width="3"') + circ(5, 12, 3, FILL),
+    c_ion: circ(8, 12, 5.5, FILL) + circ(8, 12, 2, SOLID) + poly('13,7 17,12 14.5,12 18,18 20,12 17.5,12 20.5,7', SOLID),
+    c_enjambre: path('M3 6l8 1.5M3 12h9M3 18l8-1.5', 'stroke-width="2.2"') + poly('11,5 15,7.5 11,9', SOLID) + poly('12,10.5 16,12 12,13.5', SOLID) + poly('11,15 15,16.5 11,18', SOLID) + path('M17 7.5l5-2M17 12h5M17 16.5l5 2'),
+    c_radiador: `<rect x="3.5" y="3.5" width="17" height="17" rx="1.5" ${FILL}/>` + path('M7.5 3.5v17M12 3.5v17M16.5 3.5v17') + path('M3.5 8h17M3.5 16h17', 'stroke-opacity=".5"'),
+    h_artilleria: path('M2.5 16.5l3-5h8l7-4', 'stroke-width="2.6"') + path('M5.5 11.5v5M12 11.5v5') + circ(6, 19, 2.2, FILL) + circ(13, 19, 2.2, FILL) + circ(19, 19, 2.2, FILL),
+    heat: path('M12 21a5 5 0 0 0 5-5c0-3-2.5-4.5-3-8-2 1.5-2 3.5-2 3.5S10 10 10 8c-3 2-5 4.5-5 8a5 5 0 0 0 5 5z', FILL) + path('M12 21a2.2 2.2 0 0 0 2.2-2.2c0-1.4-1.2-2-1.5-3.6-1 .7-1 1.6-1 1.6S10 17 10 16c-1.2 1-1.9 1.8-1.9 2.8A2.2 2.2 0 0 0 12 21z'),
+    bombard: circ(12, 14, 7, FILL) + path('M12 7v14M5 14h14') + path('M4 2.5l3 4M9 1.5l2 4M16 1.5l-1.5 4M21 3l-3 3.5'),
+    blockade: circ(12, 12, 9, 'stroke-dasharray="3 2"') + circ(12, 12, 4.5, FILL) + path('M3 12h4M17 12h4M12 3v4M12 17v4') + path('M5.5 5.5l13 13', 'stroke-width="2.2"'),
+    hub: poly(starPts(6, 10.5, 5), FILL) + circ(12, 12, 3, SOLID) + circ(12, 12, 10.5, 'stroke-dasharray="1.5 3"'),
+    choke: path('M4 3.5h16M4 20.5h16M6 3.5c0 6 5 6 6 8.5-1 2.5-6 2.5-6 8.5M18 3.5c0 6-5 6-6 8.5 1 2.5 6 2.5 6 8.5', FILL),
+    deliver: path('M3 8l9-4.5L21 8v9l-9 4.5L3 17z', FILL) + path('M3 8l9 4.5L21 8M12 12.5V21.5') + path('M7.5 5.8l9 4.5'),
+    surrender: path('M6 21V3', 'stroke-width="2"') + path('M6 4h13l-3 4.5 3 4.5H6z', 'fill="currentColor" fill-opacity=".25"'),
+    spec: poly(starPts(5, 10.5, 4.5), FILL) + circ(12, 12, 2.2, SOLID),
+    lock: `<rect x="5" y="10.5" width="14" height="10" rx="2" ${FILL}/>` + path('M8 10.5V7.5a4 4 0 0 1 8 0v3') + circ(12, 15.5, 1.3, SOLID)
   };
   // Alias útiles
-  I.ships = I.fleet; I.space = I.galaxy; I.army = I.troops; I.license = I.scroll;
+  I.ruin = I.ruins; I.ships = I.fleet; I.space = I.galaxy; I.army = I.troops; I.license = I.scroll;
   I.ship_line = I.h_destructor;
 
   /** Color propio de algunos iconos (recursos y estados) */
@@ -256,7 +311,9 @@
     credits: '#ffd166', energia: '#ffd166', aleaciones: '#c9d1d9', helio3: '#4cc9f0', cristales: '#c77dff', exoticos: '#80ffdb', compuestos: '#ff8fab',
     research: '#7cd5ff', war: '#ef476f', battle: '#ff7b54', skull: '#ef476f', peace: '#90e0b0', ok: '#57cc99', check: '#57cc99', x: '#ef476f',
     warn: '#ffd166', alert: '#ef476f', star: '#ffd166', crown: '#ffd166', trophy: '#ffd166', dagger: '#ef476f', conquest: '#ef476f',
-    c_laser: '#ff5d73', c_plasma: '#c77dff', c_escudo: '#4cc9f0', b_planta: '#ffd166', b_escudo: '#4cc9f0', heart: '#ef476f', hullhp: '#ef476f', power: '#ffd166'
+    blackhole: '#b388ff', portal: '#b388ff', asteroid: '#c9b79c', nebula: '#c77dff', ruins: '#ffd166', search: '#7cd5ff', robot: '#80ffdb', lair: '#ef476f', leviathan: '#1fa37a', medusa: '#c77dff', drone: '#ef476f', devourer: '#ff3b6b',
+    tac_attack: '#ef476f', tac_hold: '#4cc9f0', tac_kite: '#ffd166', tac_retreat: '#adb5bd', focus: '#ff7b54', live: '#ef476f', warp: '#7cd5ff',
+    c_laser: '#ff5d73', c_pulso: '#7cf4ff', c_ion: '#80d8ff', c_enjambre: '#ffb86b', c_radiador: '#ff9d5c', heat: '#ff7b54', bombard: '#ef476f', blockade: '#ef476f', hub: '#ffd166', choke: '#adb5bd', deliver: '#7cd5ff', surrender: '#f1faee', spec: '#ffd166', lock: '#adb5bd', c_plasma: '#c77dff', c_escudo: '#4cc9f0', b_planta: '#ffd166', b_escudo: '#4cc9f0', heart: '#ef476f', hullhp: '#ef476f', power: '#ffd166'
   };
 
   let uidN = 0;

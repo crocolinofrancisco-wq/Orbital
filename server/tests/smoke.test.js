@@ -1,6 +1,6 @@
 /* Test de humo contra un servidor corriendo: node server/tests/smoke.test.js
  * Crea 2 jugadores, funda naciones, construye, investiga, diseña, comercia,
- * chatea, declara guerra y mueve una flota para provocar una batalla. */
+ * chatea, declara guerra y mueve una flota. Requiere un servidor corriendo (npm run dev -> URL=http://localhost:3100). */
 const { io } = require('socket.io-client');
 const URL = process.env.URL || 'http://localhost:3000';
 const post = (p, b) => fetch(URL + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(r => r.json());
@@ -37,11 +37,14 @@ async function player(name) {
   const bId = B.state.me.id;
   console.log('offer:', await A.act('offer', { to: bId, give: { credits: 100 }, want: {} }));
   await new Promise(res => A.s.emit('chat:send', { channel: 'global', text: 'hola galaxia mierda' }, r => { console.log('chat:', r); res(); }));
+  console.log('protección A/B:', (await A.act('endProtection', {})).ok, (await B.act('endProtection', {})).ok);
   console.log('war:', await A.act('declareWar', { targetId: bId }));
   const fleet = Object.values(A.state.fleets).find(f => f.owner === me.id && f.info.space > 0);
   const bCap = B.state.planets[B.state.me.capital];
   console.log('move:', await A.act('moveFleet', { fleetId: fleet.id, to: bCap.system }));
   await sleep(2000);
+  const watch = Object.keys(A.state.battles || [])[0];
+  console.log('battles visibles:', (A.state.battles || []).length, '| season:', A.state.season.phase.name, '| NPC visibles:', Object.values(A.state.fleets).filter(f => f.owner === 'pirates' || f.owner === 'monsters').length);
   console.log('A credits after:', A.state.me.credits, 'news:', A.state.news.slice(0, 3).map(n => n.text));
   A.s.close(); B.s.close();
   console.log('SMOKE OK');
